@@ -55,8 +55,16 @@ def create_dataframe(path_name:str) -> pd.DataFrame:
     return df
 
 def normalize_weather_columns(df: pd.DataFrame) -> pd.DataFrame:
-    df_weather = pd.json_normalize(df['weather']).apply(lambda x: x[0])
+    weather_data = df['weather']
+    if weather_data.empty:
+        raise ValueError('A coluna weather está vazia')
 
+    if isinstance(weather_data.iloc[0], list):
+        weather_list = weather_data.iloc[0]
+    else:
+        weather_list = [weather_data.iloc[0]]
+
+    df_weather = pd.json_normalize(weather_list)
     df_weather = df_weather.rename(columns={
         'id': 'weather_id',
         'main': 'weather_main',
@@ -64,7 +72,7 @@ def normalize_weather_columns(df: pd.DataFrame) -> pd.DataFrame:
         'icon': 'weather_icon'
     })
 
-    df = pd.concat([df, df_weather], axis=1)
+    df = pd.concat([df.reset_index(drop=True), df_weather.reset_index(drop=True)], axis=1)
     logging.info(f"\nColuna 'weather' normalizada - {len(df.columns)} colunas")
     return df
 
